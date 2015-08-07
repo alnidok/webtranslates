@@ -1,0 +1,263 @@
+<p>Помните в первой части я рассказывала о том, как забыла все школьные знания по физике, которые могли бы мне помочь в создании анимаций? Так вот, оказывается я забыла и тригонометрию. А она очень полезна для создания canvas анимаций и вообще для креативного кодинга. Прелестно, всё хорошее прошло мимо меня!</p>
+<!--more-->
+
+<p>Хорошо что есть Google, и я снова могу научиться &quot;рассчитывать треугольники&quot; благодаря <a href="https://www.mathsisfun.com/algebra/trig-solving-triangles.html" target="_blank">клевому сайту с метким названием &quot;Математика - это весело&quot;</a>.</p>
+
+<p>Бывает что некоторым, особенно начинающим, не очень понятно, почему мы выбираем те или иные математические расчеты для наших анимаций. Сегодня я хочу показать пример использования тригонометрии в сочетании с нашей &quot;эмуляцией физики&quot;, чтобы создать веселую анимацию.</p>
+
+<p>Мы собираемся сделать рычаг или катапульту, которую пользователь сможет запускать с помощью мыши и выпускать в воздух маленьких пингвинят. Знаю, звучит очень интересно. Это сделано специально, чтобы вы придерживались меня в изучении математического материала. Итак, приступим.</p>
+
+<h2>Как однажды сказала Тина Тернер:<br />
+    причем здесь <s>любовный</s> треугольник?<br />
+    (What&#39;s&nbsp;<s>love</s>&nbsp;a triangle got to do with it?)</h2>
+
+<p>Первое что нам потребуется для анимации - это рычаг. Основание достаточно простое, для него мы можем нарисовать полуокружность в нижней части canvas.</p>
+
+<pre>
+<code class="language-javascript">function drawBase() {
+    ctx.beginPath();
+    ctx.arc(leverPosition.x, leverPosition.y, 40, Math.PI, 0, false);
+    ctx.closePath();
+    ctx.lineWidth = 5;
+    ctx.fillStyle = '#c1c0c8';
+    ctx.fill();
+    }</code></pre>
+
+<p>Теперь нам надо нарисовать непосредственно рычаг. Мы знаем, что хотим рычаг длиной 200px, и собираемся отклонить его в основании на угол 70&deg; &quot;от земли&quot;. Чтобы нарисовать линию на canvas, нам надо знать начальные (x<sub>1</sub>, y<sub>1</sub>) и конечные (x<sub>1</sub>, y<sub>1</sub>) координаты. Начальными координатами будет центр основания, но мы не знаем конечные.</p>
+
+<p><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/53148/xy.png"></p>
+
+<p>По рисунку видно, что рычаг и расстояния (по x и по y) до нашей второй точки - это на самом деле стороны треугольника. Мы знаем длину рычага и угол, и должны найти проекции на оси. Включаем тригонометрию!</p>
+
+<p>Вот снова наш рычаг с отмеченными углами A, B, C и сторонами a, b, c.</p>
+
+<p><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/53148/angles.png"></p>
+
+<p>Первое правило тригонометрии - <strong>сумма углов в треугольнике равна 180&deg;</strong>.</p>
+
+<p><code>A + B + C = 180</code></p>
+
+<p>По условию угол C = 70&deg;,&nbsp;B = 90&deg; - C</p>
+
+<p><code>A = 180 - B - C</code></p>
+
+<p>Теперь мы знаем все три угла и можем рассчитать стороны a (x) и c (y). Для этого применяем <strong>правило синусов</strong>.</p>
+
+<p><code>a / six(A) = b / sin(B) = c / sin(C)</code></p>
+
+<p>У нас есть значения углов B и C, сторона b, поэтому мы можем вычислить сторону c.</p>
+
+<p><code>c / sin(c) = b / sin(B)</code><br />
+    <code>c = b * sin(C) / sin(B)</code></p>
+
+<p>И сторону a:<br />
+    <code>a / sin(A) = c / sin(C)</code><br />
+    <code>a = c * sin(A) / sin(C)</code></p>
+
+<p>Вот JavaScript функция, которая считает стороны x и y по передаваемому угла C.<br />
+    <em>Не забывайте, что тригонометрические функции в JavaScript работают с углами в радианах, а мы оперируем градусами.</em> Поэтому используем вспомогательную функцию для перевода в радианы.</p>
+
+<pre>
+<code class="language-javascript">function calculateTriangleXY(C) {
+    var B = 90;
+    // solve for A
+    var A = 180 - C - B;
+    // solve c and a
+    var c = (leverLength * Math.sin(toRadians(C))) / Math.sin(toRadians(B));
+    var a = (c * Math.sin(toRadians(A))) / Math.sin(toRadians(C));
+    // return x/y sides
+    return {x: a, y: c}
+    }
+
+    function toRadians(deg) {
+    return deg / 180 * Math.PI;
+    }</code></pre>
+
+<p>Теперь у нас есть функция для вычисления x/y сторон треугольника, и мы можем нарисовать линию нашего рычага.</p>
+
+<pre>
+<code class="language-javascript">function drawLever() {
+    var xy = calculateTriangleXY(currentAngle);
+    ctx.beginPath();
+    ctx.moveTo(leverPosition.x, leverPosition.y);
+    ctx.lineTo(leverPosition.x - xy.x, leverPosition.y - xy.y);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#7b4b3d';
+    ctx.stroke();
+    }</code></pre>
+
+<p>Итак, имеем рычаг, теперь самое время дать пользователю возможность взаимодействовать с ним. Мы можем сделать это, записывая координаты курсора мыши при перемещении, и проверяя, попадают ли они в область действия рычага. Однако эта область используется не только для проверки.</p>
+
+<p><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/53148/hit-area.png"></p>
+
+<p><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/53148/hit-area-mousepos.png"></p>
+
+<p>Когда курсор мыши находится в области действия рычага, получаем новый треугольник с тем же углом 70&deg;. Т.к. мы знаем y-координату курсора, мы можем проверить, какой должна быть x-координата, чтобы попасть в эту область. Если координаты мыши находятся вблизи треугольника, предполагаем что курсор располагается в области действия рычага. Давайте обновим функцию <code>calculateTriangleXY</code>, чтобы можно было по передаваемым значениям угла C и y-координаты рассчитать x-координату.</p>
+
+<pre>
+<code class="language-javascript">function calculateTriangleXY(C, y) {
+    var B = 90;
+    // solve for A
+    var A = 180 - C - B;
+    // if we only have angle C we need to solve edge c first
+    var c = y || (leverLength * Math.sin(toRadians(C))) / Math.sin(toRadians(B));
+    var a = (c * Math.sin(toRadians(A))) / Math.sin(toRadians(C));
+    return {x: a, y: c}
+    }</code></pre>
+
+<p>Теперь можем проверить курсор, и если он находится в нужной области, изменим его на pointer (так пользователь догадается, что область кликабельна), и установим переменную <code>hinting</code> в true.</p>
+
+<pre>
+<code class="language-javascript">// get x given current angle &amp; y pos
+    var xy = calculateTriangleXY(currentAngle, leverPosition.y - mousePos.y);
+    // if mouse x is close to the triangle x, we're in the hit area
+    if ((mousePos.x &gt; leverPosition.x - xy.x - 20) &amp;&amp; (mousePos.x &lt; leverPosition.x - xy.x + 20)) {
+    canvas.style.cursor = 'pointer';
+    hitting = true;
+    } else {
+    canvas.style.cursor = 'auto';
+    hitting = false;
+    }</code></pre>
+
+<p>Теперь мы знаем, когда пользователь направляет курсор в область действия рычага. Прекрасно! Это означает, что когда он кликнет - мы начнем &quot;двигать&quot; (dragging) рычаг. Когда пользователь кликает и перемещает - нам надо перемещать рычаг вслед за курсором. Для этого нам необходимо определить угол по координатам курсора. И как вы догадываетесь - еще больше тригонометрии!</p>
+
+<p>В данном случае мы знаем стороны a и c благодаря позициям курсора и угол B (90&deg;).</p>
+
+<p><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/53148/drag.png"></p>
+
+<p>Для определения угла С сначала мы должны найти сторону b. Применим <strong>правило косинусов</strong>:<br />
+    <code>b<sup>2</sup> = a<sup>2</sup> + c<sup>2</sup> &minus; (2 * a * c * cos(B))</code></p>
+
+<p>И зная b, найдем угол C:</p>
+
+<pre>
+<code class="language-javascript">function calculateTriangleAngle(x,y) {
+    var A, C;
+    var B = 90;
+    var c = y;
+    var a = x;
+    var b = Math.sqrt(Math.pow(a, 2) + Math.pow(c, 2) - 2 * a * c * Math.cos(toRadians(B)));
+    C = Math.asin(Math.sin(toRadians(B)) / b * c);
+    return C;
+    }</code></pre>
+
+<p>Затем мы можем установить угол для рычага в зависимости от положения курсора мыши!</p>
+
+<pre>
+<code class="language-javascript">var angle = toDegrees(calculateTriangleAngle(leverPosition.x - mousePos.x, leverPosition.y - mousePos.y));
+    if (angle &lt; 10) {
+    release();
+    return;
+    }
+    if (angle &gt; 80) angle = 80;
+    currentAngle = angle;</code></pre>
+
+<p>И наконец, мы собираемся добавить функцию для &#39;выпуска&#39; рычага (если пользователь отпускает рычаг или перетаскивает его почти &quot;до земли&quot;). Помните в первой части этой серии я объясняла, что скорость состоит их x и y компонент? Помимо этого может быть и скорость вращения Vr, как в данном случае. Мы собираемся устанавливать r в зависимости от того, как далеко был сдвинут рычаг. Таким образом он будет возвращаться к первоначальному углу в 70&deg;.</p>
+
+<pre>
+<code class="language-javascript">function release() {
+    pulling = false;
+    vr = (70 - currentAngle) * 0.06;
+    }</code></pre>
+
+<p>Собрав всё вместе, мы имеем рычаг: который можно тащить и отпускать!</p>
+
+<p><iframe allowfullscreen="true" allowtransparency="true" frameborder="0" height="360" id="cp_embed_EjXqpR" scrolling="no" src="//codepen.io/anon/embed/EjXqpR?slug-hash=EjXqpR&amp;default-tab=result&amp;height=360&amp;theme-id=1970&amp;user=anon" width="100%"></iframe></p>
+
+<h2>Давайте сделаем летающих пингвинов</h2>
+
+<p>Как у вас дела, все еще со мной? Было немного математики, я знаю. Эта статья такая длинная, что я съела три кусочка наччо* с момента написания, поэтому можете сделать небольшой перерыв и съесть немного мексиканской еды.</p>
+
+<p>Сначала нам нужно создать объект Penguin, который мы будем использовать для генерации пингвинчиков.</p>
+
+<pre>
+<code class="language-javascript">function Penguin(x, y, r) {
+    var _this = this;
+    var img;
+    this.x = x;
+    this.y = y;
+    this.r = targetAngle;
+
+    (function() {
+    img = new Image();
+    img.src = 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/53148/penguin.png';
+    })();
+
+    this.update = function() {
+    // rotating the penguin
+    ctx.save();
+    ctx.translate(_this.x, _this.y);
+    if(_this.latched) ctx.rotate(toRadians(currentAngle));
+    else ctx.rotate(toRadians(_this.r));
+    // translating a little so it sits further down the ledge
+    ctx.translate(24, -16);
+    ctx.drawImage(img, -20, -20, 40, 40);
+    ctx.restore();
+    }
+    }</code></pre>
+
+<p>Теперь можем создать пингвина на краю.</p>
+
+<pre>
+<code class="language-javascript">function addPenguin() {
+    var penguin = new Penguin(140,120);
+    penguin.latched = true;
+    penguins.push(penguin);
+    loadedPenguin = penguin;
+    }</code></pre>
+
+<p>Вы заметите, что мы установили <code>latched</code> в true, это для того, чтобы вращать пингвина вместе с рычагом при повороте последнего, когда они сцеплены. Мы должны &quot;отцепить&quot; пингвина, когда рычаг возвращается к первоначальному значению угла. Добавляем проверку этого момента в функцию <code>updateRotation</code> и запускаем пингвина.</p>
+
+<pre>
+<code class="language-javascript">if (released &amp;&amp; currentAngle &gt; targetAngle) {
+    released = false;
+    throwPenguin();
+    }</code></pre>
+
+<p>Запуск пингвина предполагает установку скоростей Vx, Vy, Vr, которые мы зададим пингвину при свободном полете</p>
+
+<pre>
+<code class="language-javascript">function throwPenguin() {
+    loadedPenguin.vx = vr*4;
+    loadedPenguin.vy = vr*-1.86;
+    loadedPenguin.vr = 0.5;
+    loadedPenguin.latched = false;
+    loadedPenguin = null;
+    setTimeout(addPenguin, 500);
+    }</code></pre>
+
+<pre>
+<code class="language-javascript">// added to Penguin.update --
+    // penguin is launched!
+    if(!_this.latched &amp;&amp; _this.vx) {
+    _this.vy += gravity;
+    _this.x += _this.vx;
+    _this.y += _this.vy;
+    _this.r += _this.vr;
+    _this.vx *= 0.98;
+    _this.vy *= 0.98;
+
+    // check for hitting edges
+    if (_this.x + 28 &gt; canvasWidth) {
+    _this.x = canvasWidth - 28;
+    _this.vx *= bounce;
+    _this.vr *= bounce;
+    }
+
+    if (_this.y + 38 &gt; canvasHeight) {
+    _this.y = canvasHeight - 38;
+    _this.vy *= bounce;
+    _this.vr *= bounce;
+    }
+
+    if (Math.abs(_this.vx) &lt; 0.001) _this.vx = 0;
+    if (Math.abs(_this.vy) &lt; 0.001) _this.vy = 0;
+    }</code></pre>
+
+<h2>Окончательное демо</h2>
+
+<p><iframe allowfullscreen="true" allowtransparency="true" frameborder="0" height="360" id="cp_embed_zGdNmK" scrolling="no" src="//codepen.io/anon/embed/zGdNmK?slug-hash=zGdNmK&amp;default-tab=result&amp;height=360&amp;theme-id=1970&amp;user=anon" width="100%"></iframe></p>
+
+<p>Уф! Было довольно мало JavaScript, но в конце все же добрались до него. Теперь ведь вы знаете, как рассчитывать треугольники, и какие клевые вещи можно делать с JavaScript на canvas? Хочу увидеть ваши идеи, не могу дождаться</p>
+
+<p>В 3 части серии я расскажу о физике упругости.</p>

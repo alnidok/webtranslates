@@ -1,0 +1,63 @@
+<p>HTML позволяет создать ссылку на скачивание достаточно просто: добавляете тег и в атрибуте <code>href</code> указываете путь к файлу. Однако, некоторые типы файлов (изображения, .pdf, .txt, .doc и др.) не будут скачиваться, вместо этого они откроются в браузере. Если у вас есть серверный доступ к сайту, можно настроить <code>.htaccess</code> для скачивания этих файлов напрямую. Но если ваш сайт размещен на бесплатных площадках, таких как WordPress.com, Blogspot или Github, которые не позволяют этого сделать - следует использовать атрибут <code>download</code>. </p>
+<!--more-->
+
+<h2>Использование</h2>
+
+<p>Атрибут <code>download</code> является частью спецификации HTML5 и определяет ссылку именно как ссылку <em>на скачивание</em>, а не <em>навигационную</em>. При этом он позволяет переименовать файл после скачивания. Файл, находящийся на сервере, особенно если он создается автоматически, может называться например <code>acme-doc-2.0.1.txt</code>. Но для пользователей было бы лучше скачивать файл с более разумным именем, возможно таким: <code>Acme Documentation (ver. 2.0.1).txt</code>. Делается это следующим образом:</p>
+
+<pre>
+<code class="language-html">&lt;a href="download/acme-doc-2.0.1.txt" download="Acme Documentation (ver. 2.0.1).txt">Download Text&lt;/a></code></pre>
+
+<p>Попробуйте скачать файл <a href="http://tutsplus.github.io/download-attribute/index.html" target="_blank">с этой страницы</a>. Он должен скачаться с названием, которое указано в атрибуте <code>download</code>.</p>
+
+<p><img alt="" src="https://cms-assets.tutsplus.com/uploads/users/69/posts/23880/image/download-attr-downloaded.jpg" /></p>
+
+<p><strong>Несколько замечаний:</strong></p>
+
+<ul>
+    <li>Firefox разрешает загрузку файлов лишь с текущего источника (same origin), <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=676619" target="_blank">заботясь о безопасности</a>. Файл должен приходить с текущего сервера или домена, в противном случае он будет открыт в браузере.</li>
+    <li>Пока загрузка cross-origin файлов поддерживается в Chrome и последней версии Opera (с Chromium/Blink), эти браузеры проигнорируют значение атрибута <code>download</code>. Другими словами, имя файла останется неизменным.</li>
+</ul>
+
+<h2>Fallback</h2>
+
+<p>На время написания этой статьи поддержки атрибута <code>download</code> еще не было в Safari и (как можно было ожидать) в Internet Explorer. Однако, согласно <a href="https://status.modern.ie/" target="_blank">modern IE status</a>, эта фича находится в верхней части dev-листа и получает много голосов.</p>
+
+<p><img alt="" src="https://cms-assets.tutsplus.com/uploads/users/69/posts/23880/image/download-attr-iestatus.jpg" /></p>
+
+<p>А для браузеров, которые не поддерживают этот атрибут, мы можем сделать неплохой запасной вариант (fallback) - показывать дополнительный текст-подсказку под ссылкой на скачивание. Чтобы это сделать, нам нужно скачать <a href="http://modernizr.com/">Modernizr</a> с включенным тестом на поддержку атрибута <code>download</code>.</p>
+
+<p>
+    <figure><img alt="" src="https://cms-assets.tutsplus.com/uploads/users/69/posts/23880/image/download-attr-modernizr.jpg" />
+        <figcaption>Конфигурация сборки Modernizr</figcaption>
+    </figure>
+</p>
+
+<p>Затем мы можем добавить следующий скрипт.</p>
+
+<pre>
+<code class="language-js">if ( ! Modernizr.adownload ) {
+    var $link = $('a');
+
+    $link.each(function() {
+    var $download = $(this).attr('download');
+
+    if (typeof $download !== typeof undefined && $download !== false) {
+    var $el = $('&lt;div>').addClass('download-instruction').text('Right-click and select "Download Linked File"');
+    $el.insertAfter($(this));
+    }
+
+    });
+    }</code></pre>
+
+<p>Скрипт проверит, поддерживает ли браузер данный атрибут; если нет - то под всеми ссылками с указанным <code>download</code> атрибутом будет добавлен новый &lt;div> с подсказкой.</p>
+
+<p>
+    <figure>
+        <img alt="" src="https://cms-assets.tutsplus.com/uploads/users/69/posts/23880/image/download-attr-safari.jpg" />
+        <figcaption>Подсказка в Safari</figcaption>
+    </figure>
+</p>
+
+<h2>Подводя итог</h2>
+<p>Атрибут <code>download</code> делает обработку ссылок на скачивание очень удобным для тех, кто не имеет доступа к серверным настройкам. С нетерпением ждем, что Internet Explorer и Safari вскоре реализуют поддержку атрибута <code>download</code>!</p>

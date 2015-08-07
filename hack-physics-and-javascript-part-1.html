@@ -1,0 +1,74 @@
+<p>Признание: я и вправду, плохо знаю физику. Даже если сказать, что знаю основы - это будет преувеличением. Последний раз, когда я знала что-то сложное по физике, было 11 лет назад. Тогда в 17 у меня были достаточно хорошие знания, чтобы получить B+ на выпускном экзамене по физике. После этого я резко выкинула из головы все эти знания, чтобы освободить место для более важных вещей, таких как альбом Nellyville от Nelly.</p>
+
+<p>К 2013-му я обнаруживаю, что на самом деле могла бы использовать физические расчеты для создания клевых анимаций на canvas. Черт возьми! К счастью я довольно быстро поняла, что мне не нужно пересматривать школьное образование, вместо этого можно считерить.</p>
+<!--more-->
+
+<h2>Эмулируем физику</h2>
+
+<p>Нравится называть подобные вещи &quot;эмуляцией&quot;, потому что мы рассматриваем очень базовое понятие векторов и проецируем их на JavaScript, но это никоим образом не передает реальной физической картины. Прелесть эмуляции в том, что не обязательно вникать в суть физического явления, достаточно просто понимать, как это применять для анимаций.</p>
+
+<h2>Вектора</h2>
+
+<p>Вектор - это математический объект, определяемый величиной и направлением. Скорость и ускорение являются векторами. Если вы говорите, что собираетесь проехать 35 миль на северо-восток, то можно задать вектор.</p>
+
+<h2>Реализация скорости на JavaScript</h2>
+
+<p>Возможно вы уже знаете, что такое скорость, но я скажу по-другому: скорость - это вектор, который состоит из величины и направления. Когда мы проецируем (переносим) скорость на JavaScript, мы делим ее на две составляющие: в направлении x и в направлении y. Здесь мы имеем дело с пикселями и JavaScript анимацией, поэтому можем описывать нашу скорость в терминах &quot;пиксель на фрейм&quot; (pixels per frame). Этому квадратику присвоена скорость 2px/frame по x и 2px/frame по y. В результате он движется линейно по диагонали.</p>
+
+<p><iframe allowfullscreen="true" allowtransparency="true" frameborder="0" height="300" id="cp_embed_VLPVYG" scrolling="no" src="//codepen.io/anon/embed/VLPVYG?slug-hash=VLPVYG&amp;default-tab=result&amp;height=300&amp;theme-id=1970&amp;user=anon" width="100%"></iframe></p>
+
+<h2>Делаем ускорение</h2>
+
+<p>Ускорение - это быстрота изменения скорости объекта. Как можно спроецировать это на JavaScript? У нас есть скорость Vx и Vy, и мы можем добавить ускорение по этим направлениям. Так, если величина ускорения равна 0.5px, то за каждый фрейм мы добавляем 0.5px к скорости по x и к скорости по y. Это заставит квадратик ускоряться.</p>
+
+<p><iframe allowfullscreen="true" allowtransparency="true" frameborder="0" height="300" id="cp_embed_oXBQXy" scrolling="no" src="//codepen.io/anon/embed/oXBQXy?slug-hash=oXBQXy&amp;default-tab=result&amp;height=300&amp;theme-id=1970&amp;user=anon" width="100%"></iframe></p>
+
+<h2>Супер-простой и супер-веселый пример: делаем фонтан частиц!</h2>
+
+<p>Фонтан частиц - это первая вещь, которую я анимировала. Тогда я использовала Flash и ActionScript, но теперь мы можем то же самое сделать с помощью JavaScript и canvas. Я собираюсь использовать объект Particle для создания фонтана. Если вы не знаете, как на JavaScript рисовать частицы, советую сначала прочитать <a href="http://codepen.io/rachsmith/blog/controlling-the-canvas-with-javascript-objects">пост, в котором это описывается</a>.</p>
+
+<p>Итак, для создания фонтана нам надо генерировать частицы. Для каждой частицы нам нужна позиция и скорость (Vx, Vy). Пусть начальная позиция будет в центре canvas, и чтобы частицы вылетали из фонтана, будем рандомно менять их скорость.</p>
+
+<pre>
+<code class="language-javascript">function Particle(x, y, vx, vy, size, color, opacity) {
+
+    this.update = function() {
+    x += vx;
+    y += vy;
+    }
+
+    this.draw = function() {
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, size, size);
+    }
+    }
+
+    function createParticle(i) {
+    // initial position in middle of canvas
+    var x = width*0.5;
+    var y = height*0.5;
+    // randomize the vx and vy a little - but we still want them flying 'up' and 'out'
+    var vx = -2+Math.random()*4;
+    var vy = Math.random()*-3;
+    // randomize size and opacity a little &amp; pick a color from our color palette
+    var size = 5+Math.random()*5;
+    var color = colors[i%colors.length];
+    var opacity =  0.5 + Math.random()*0.5;
+    var p = new Particle(x, y, vx, vy, size, color, opacity);
+    particles.push(p);
+    }</code></pre>
+
+<p>Вот что получилось (нажмите RERUN чтобы увидеть)</p>
+
+<p><iframe allowfullscreen="true" allowtransparency="true" frameborder="0" height="300" id="cp_embed_NqdmGg" scrolling="no" src="//codepen.io/anon/embed/NqdmGg?slug-hash=NqdmGg&amp;default-tab=result&amp;height=300&amp;theme-id=1970&amp;user=anon" width="100%"></iframe></p>
+
+<p>Но частицы улетают и не падают. Нам нужно добавить гравитацию, чтобы они падали вниз. Мы уже знаем как это сделать, потому что гравитация - это ничто иное как вертикальное ускорение вниз! Установим величину этого ускорения в 0.04px. К тому же с каждым фреймом мы будем немного уменьшать opacity, в итоге каждая частица исчезнет. Если opacity становится равной 0, такие частицы &quot;сбрасываем&quot; и помещаем в центр. Т.о. получается бесконечный фонтан.</p>
+
+<p><iframe allowfullscreen="true" allowtransparency="true" frameborder="0" height="300" id="cp_embed_oXBOwg" scrolling="no" src="//codepen.io/anon/embed/oXBOwg?slug-hash=oXBOwg&amp;default-tab=result&amp;height=300&amp;theme-id=1970&amp;user=anon" width="100%"></iframe></p>
+
+<p>Ура, наш фонтан работает!</p>
+
+<p>Вскоре я напишу 2 часть, где расскажу о применении тригонометрии для вычисления направления вектора, а также введение в физику упругости!</p>
+
+<p>Если есть вопросы или пожелания, о чем написать следующую статью - оставляйте комментарии к оригиналу, пишите твиты на @rachsmithtweets или на почту contact@rachsmith.com</p>

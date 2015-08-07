@@ -1,0 +1,79 @@
+<p>Это может быть полезно, если мы хотим выполнить какое-то действие по завершении эффекта.&nbsp;</p>
+
+<p>Вот несколько случаев применения:</p>
+<!--more-->
+
+<ol>
+    <li>Анимация&nbsp;<code>display: none</code>.
+
+        <p>&nbsp;</p>
+
+        <div class="embeddedContent oembed-provider-vimeo" data-align="center" data-oembed="https://vimeo.com/131424355" data-oembed_provider="vimeo" data-resizetype="noresize" style="text-align:center"><iframe allowfullscreen="" frameborder="0" height="720" mozallowfullscreen="" src="https://player.vimeo.com/video/131424355" title="Switching Readerrr's modal boxes" webkitallowfullscreen="" width="980"></iframe></div>
+
+        <p>&nbsp;</p>
+
+        <p>Я использовал эту технику на&nbsp;<a href="http://readerrr.com/" target="_blank">Readerrr</a>&nbsp;для содержимого&nbsp;табов и в модальных окнах: новый контент&nbsp;в модальном окне показывается лишь после исчезновения старого.</p>
+    </li>
+    <li>Анимация исчезновения элемента
+        <p>&nbsp;</p>
+
+        <div class="embeddedContent oembed-provider-vimeo" data-align="center" data-oembed="https://vimeo.com/131424353" data-oembed_provider="vimeo" data-resizetype="noresize" style="text-align:center"><iframe allowfullscreen="" frameborder="0" height="720" mozallowfullscreen="" src="https://player.vimeo.com/video/131424353" title="Removing items from osvaldas.info shopping cart" webkitallowfullscreen="" width="980"></iframe></div>
+
+        <p>&nbsp;</p>
+
+        <p>После этого я удаляю элемент из DOM. Это реализовано в корзине <a href="http://osvaldas.info/shop" target="_blank">магазина</a>.</p>
+    </li>
+</ol>
+
+<h2>Проблема</h2>
+
+<p>Возьмем случай с корзиной в качестве примера. Обычно я удаляю товар из корзины следующим образом:</p>
+
+<pre>
+<code class="language-javascript language-js">$('.item').addClass('disappear').on('webkitAnimationEnd mozAnimationEnd oAnimationEnd oanimationend animationend', function() {
+    $(this).remove();
+    });</code>
+</pre>
+
+<p>Проблема этого кода в том, что он некорректно &quot;деградирует&quot;: callback не будет вызван в браузерах, которые не поддерживают CSS анимации (IE 9-). Также он не сработает, если по какой-то причине длительность анимации была установлена на 0 секунд.</p>
+
+<p>Подводя итог скажем, что использовать этот код небезопасно.</p>
+
+<h2>Решение</h2>
+
+<p>Во избежании этих недостатков, вы можете использовать эти маленькие функции, которые я написал:</p>
+
+<ul>
+    <li><code>onCSSAnimationEnd</code> - для анимаций;</li>
+    <li><code>onTransitionEnd</code> - для переходов;</li>
+</ul>
+
+<p>Использовать их просто:</p>
+
+<pre>
+<code class="language-javascript language-js">$('.item').addClass('disappear').onCSSAnimationEnd(function() {
+    $(this).remove();
+    });
+</code>
+</pre>
+
+<p>А вот версия на чистом JavaScript:</p>
+
+<pre>
+<code class="language-javascript language-js">var item = document.querySelector('.item');
+    item.classList.add('disappear');
+    item.onCSSAnimationEnd(function() {
+    item.parentNode.removeChild(item);
+    });</code>
+</pre>
+
+<h2>Исходники</h2>
+
+<ul>
+    <li><a href="http://osvaldas.info/examples/detecting-css-animation-transition-end-with-javascript/oncssanimationend.js" target="_blank">oncssanimationend.js</a>; без зависимостей (IE 9+);</li>
+    <li><a href="http://osvaldas.info/examples/detecting-css-animation-transition-end-with-javascript/jquery.oncssanimationend.js" target="_blank">jquery.oncssanimationend.js</a>; jQuery dependency (работает и с v1 и v2);</li>
+</ul>
+
+<h2>Демо</h2>
+
+<p>Посмотреть в действии&nbsp;и пощупать можно на <a href="http://osvaldas.info/examples/detecting-css-animation-transition-end-with-javascript/">демо страничке</a></p>

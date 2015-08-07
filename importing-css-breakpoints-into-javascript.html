@@ -1,0 +1,143 @@
+<p>В адаптивном дизайне есть масса трудностей. Одно из самых болезненных - связывание JavaScript кода с контрольными точками (breakpoints) медиавыражений. Проблема в том, что JavaScript не имеет нативного доступа к CSS. Многие решения (включая <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/matchMedia" target="_blank">window.matchMedia()</a> и <a href="http://wicky.nillia.ms/enquire.js/" target="_blank">Enquire.js</a>) подразумевают либо объявление контрольных точек и в CSS и в JS, либо требуют IE10+. Т.е. для замены значений приходится проделывать операцию дважды, что конечно же не очень правильно.</p>
+<!--more-->
+
+<h2>Простое решение</h2>
+
+<p>Быстрым и простым решением этой проблемы является JS-импорт брейкпоинтов напрямую из CSS в DOM. Преимуществами данного метода являются:</p>
+
+<ul>
+    <li>простота и легковесность</li>
+    <li>соблюдение <a href="https://ru.wikipedia.org/wiki/Don’t_repeat_yourself" target="_blank">принципа DRY</a></li>
+    <li>совместим со всеми браузерами, понимающими медиавыражения (IE9+)</li>
+</ul>
+
+<p>Чтобы увидеть то, к чему мы придем, посмотрите <a href="http://codepen.io/mherchel/pen/gbygBd" target="_blank">результат на codepen</a>.<br>Итак, приступим!</p>
+
+<h2>Объявляем брейкпоинты</h2>
+
+<p>Для простоты код на чистом CSS (легко преобразуется в Sass или Less).</p>
+
+<pre>
+<code class="language-css">/**
+    * These values will not show up in content, but can be
+    * queried by JavaScript to know which breakpoint is active.
+    * Add or remove as many breakpoints as you like.
+    */
+    body:before {
+    content: "smartphone";
+    display: none; /* Prevent from displaying. */
+    }
+    @media (min-width: 700px) {
+    body:before {
+    content: "tablet";
+    }
+    }
+    @media (min-width: 1100px) {
+    body:before {
+    content: "desktop";
+    }
+    }</code></pre>
+
+<p>Отмечу, что я должен скрыть <code>::before</code>, чтобы пользователю он не был виден.</p>
+
+<h2>Импортируем брейкпоинты в JavaScript</h2>
+
+<p>Вот магия, которая запрашивает значение текущего брейкпоинта. Я использую объект для хранения значений.</p>
+
+<pre>
+<code class="language-javascript">var breakpoint = {};
+    breakpoint.refreshValue = function () {
+    this.value = window.getComputedStyle(document.querySelector('body'), ':before').getPropertyValue('content').replace(/"/g, '');
+    };</code></pre>
+
+<p>Вот несколько вещей, которые здесь использованы. Я запрашиваю значение атрибута <code>content</code> у псевдоэлемента <code>::before</code>, используя метод, <a href="http://davidwalsh.name/pseudo-element" target="_blank">который популяризировал David Walsh</a>. Я не могу приаттачить полученное значение непосредственно к body, т.к. Internet Explorer 9 в результате запроса возвращает &quot;normal&quot;. IE10 и IE11 в этом плане работают корректно. Firefox и IE возвращают значение в двойных кавычках, а остальные браузеры - нет. Поэтому я использую replace() с регуляркой.</p>
+
+<h2>Вешаем trigger на события resize и page load</h2>
+
+<p>Изменение брейкпоинтов основано на изменении ширины окна браузера, поэтому я должен обновлять значение при ресайзе. К тому же я вешаю обработку на событие загрузки страницы, чтобы получить первоначальное значение.</p>
+
+<pre>
+<code class="language-javascript">$(window).resize(function () {
+    breakpoint.refreshValue();
+    }).resize();</code></pre>
+
+<h2>В действии</h2>
+
+<p>Вот простой if-else, который выполняет код, основываясь на значении текущего брейкпоинта.</p>
+
+<pre>
+<code class="language-javascript">if (breakpoint.value == 'tablet') {
+    console.log('Tablet breakpoint');
+    }
+    else {
+    console.log('Some other breakpoint');
+    }</code></pre>
+
+<h2>Пример использования</h2>
+
+<p>Во процессе редизайна сайта <a href="http://www.syfy.com" target="_blank">Syfy.com</a> я столкнулся с интересной проблемой. Нужно было вставить рекламный блок 728x90 вторым рядом &quot;плиток&quot;. Сложность в том, что количество &quot;плиток&quot; на строку меняется в зависимости от текущего брейкпоинта.</p>
+
+<p><img alt="" src="https://www.lullabot.com/sites/default/files/field_regular_upload/breakpoint-tiles.png" /></p>
+
+<p>Привожу простой пример того, как я справлялся с этим.</p>
+
+<h2>1. Получаем текущий брейкпоинт</h2>
+
+<pre>
+<code class="language-javascript">/**
+    * Global: Get current CSS breakpoint
+    */
+
+    var breakpoint = {};
+    breakpoint.refreshValue = function () {
+    this.value = window.getComputedStyle(document.querySelector('body'), ':before').getPropertyValue('content').replace(/"/g, '');
+    };</code></pre>
+
+<h2>2. Вызываем функцию с&nbsp;соответствующим параметром</h2>
+
+<pre>
+<code class="language-javascript">/**
+    * Pass the number of columns to leaderboardMoveHelper() to do all the work
+    */
+    var leaderboardMove = function() {
+    if (breakpoint.value == 'tablet_narrow') {
+    leaderboardMoveHelper(2);
+    }
+    if ((breakpoint.value == 'tablet_wide') || (breakpoint.value == 'normal')) {
+    leaderboardMoveHelper(3);
+    }
+    if (breakpoint.value == 'wide') {
+    leaderboardMoveHelper(4);
+    }
+    }</code></pre>
+
+<h2>3. Располагаем блок в нужное место DOM</h2>
+
+<pre>
+<code class="language-javascript">/**
+    * Move the leaderboard to the second row
+    */
+    var leaderboardMoveHelper = function(columns) {
+    var $tileView = $('.tile-container', context),
+    $leaderboard = $('.ad-leaderboard.processed', $tileView),
+    // Move the leaderboard
+    $('.tile:nth-child(' + (columns+1) + ')', $tileView).after($leaderboard);
+    // Indicate it's moved
+    $leaderboard.addClass('js-leaderboard-processed');
+    $tileView.addClass('js-leaderboard-processed');
+    };</code></pre>
+
+<h2>4. Выполняем при ресайзе окна браузера и загрузке страницы</h2>
+
+<pre>
+<code class="language-javascript">/**
+    * Execute
+    */
+    $(window).resize(function () {
+    breakpoint.refreshValue();
+    leaderboardMove();
+    }).resize();</code></pre>
+
+<h2>Заключение</h2>
+
+<p>Это очень простая и полезная техника. Та&nbsp;же логика может быть использована для передачи состояния брейкпоинта,&nbsp;меняя псевдоэлементы любых элементов в DOM. Например если имеется элемент, который изменяет стили&nbsp;между множеством брейкпоинтов, можно передать и запросить псевдоэлемент или даже запросить сам меняющийся CSS. Не стесняйтесь экспериментировать с моим&nbsp;<a href="http://codepen.io/mherchel/pen/gbygBd" target="_blank">примером в Сodepen</a>.</p>

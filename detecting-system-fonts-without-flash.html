@@ -1,0 +1,109 @@
+<p>Большинство wisiwyg редакторов позволяют пользователю выбирать шрифты из выпадающего списка. Этот список часто включает системные шрифты. К сожалению, для web не существует API, позволяющего получить локально установленные шрифты, поэтому многие решения <a href="http://www.maratz.com/blog/archives/2006/08/18/detect-visitors-fonts-with-flash/" target="_blank">используют Flash</a> для их определения.</p>
+<!--more-->
+
+<p><img alt="Google Docs font menu" src="http://bramstein.com/static/google-docs-font-menu.7c6e519c76.png" /></p>
+
+<p>К тому же существуют вопросы безопасности при использовании Flash. Плюс его доля на рынке уменьшилась за последние пару лет. Существует также вероятность, что кто-то посещает ваш сайт без установленного Flash (например с iOS).</p>
+
+<p>Итак, что же нужно сделать, чтобы выяснить, какие шрифты установлены локально? Вы можете использовать простую технику определения доступности шрифта на JavaScript. Вот некоторые системные шрифты, поддержка которых заявлена на вашем ПК:</p>
+
+<figure>
+    <ul id="fonts"><li class="maybe available" data-font="Arial" style="font-family: Arial, sans-serif, monospace;">Arial</li><li class="maybe available" data-font="Calibri" style="font-family: Calibri, sans-serif, monospace;">Calibri</li><li class="maybe" data-font="Century Gothic" style="font-family: 'Century Gothic', sans-serif, monospace;">Century Gothic</li><li class="maybe available" data-font="Comic Sans" style="font-family: 'Comic Sans', 'Comic Sans MS', fantasy, monospace;">Comic Sans</li><li class="maybe" data-font="Consolas" style="font-family: Consolas, monospace, monospace;">Consolas</li><li class="maybe available" data-font="Courier" style="font-family: Courier, 'Courier New', monospace, monospace;">Courier</li><li class="maybe" data-font="Dejavu Sans" style="font-family: 'Dejavu Sans', sans-serif, monospace;">Dejavu Sans</li><li class="maybe" data-font="Dejavu Serif" style="font-family: 'Dejavu Serif', serif, monospace;">Dejavu Serif</li><li class="maybe available" data-font="Georgia" style="font-family: Georgia, serif, monospace;">Georgia</li><li class="maybe available" data-font="Gill Sans" style="font-family: 'Gill Sans', sans-serif, monospace;">Gill Sans</li><li class="maybe available" data-font="Helvetica" style="font-family: 'Helvetica Neue', Helvetica, sans-serif, monospace;">Helvetica</li><li class="maybe available" data-font="Impact" style="font-family: Impact, sans-serif, monospace;">Impact</li><li class="maybe" data-font="Lucida Sans" style="font-family: 'Lucida Sans Unicode', 'Lucida Sans', sans-serif, monospace;">Lucida Sans</li><li class="maybe" data-font="Myriad Pro" style="font-family: 'Myriad Pro', sans-serif, monospace;">Myriad Pro</li><li class="maybe" data-font="Open Sans" style="font-family: 'Open Sans', sans-serif, monospace;">Open Sans</li><li class="maybe available" data-font="Palatino" style="font-family: Palatino, 'Palatino Linotype', serif, monospace;">Palatino</li><li class="maybe available" data-font="Tahoma" style="font-family: Tahoma, sans-serif, monospace;">Tahoma</li><li class="maybe available" data-font="Times New Roman" style="font-family: 'Times New Roman', Times, serif, monospace;">Times New Roman</li><li class="maybe available" data-font="Trebuchet" style="font-family: 'Trebuchet MS', sans-serif, monospace;">Trebuchet</li><li class="maybe available" data-font="Verdana" style="font-family: Verdana, sans-serif, monospace;">Verdana</li><li class="maybe available" data-font="Zapfino" style="font-family: Zapfino, cursive, monospace;">Zapfino</li></ul>
+
+    <figcaption>Результат определения поддержки общих системных шрифтов на вашем ПК. <br>Те, что отмечены ✓ - доступны на вашем компьютере; те, что отмечены ✗ - не доступны.</figcaption>
+</figure>
+
+<p>Приведенный выше пример использует <a href="https://github.com/bramstein/fontfaceobserver/" target="_blank">FontFaceObserver</a>, небольшую библиотеку JavaScript, которую я написал для загрузки web-шрифтов. Даже если FontFaceObserver был создан для веб-шрифтов, он также может быть использован для обнаружения локально установленные шрифты.</p>
+
+<p>Чтобы проверить, доступен ли шрифт, вы передаете его имя конструктору FontFaceObserver и вызываете метод проверки. Если возвращается истина - шрифт доступен локально, иначе - не доступен.</p>
+<pre>
+<code class="language-javascript">var observer = new FontFaceObserver(‘Georgia’);
+
+    observer.check().then(function () {
+    // Georgia is available
+    }, function () {
+    // Georgia is not available
+    });</code></pre>
+
+<p>Делая это для каждого шрифта в меню, вы можете показать пользователю, что некоторые шрифты не доступны.</p>
+
+<h2>Как это работает?</h2>
+
+<p>Идея <a href="https://github.com/bramstein/fontfaceobserver/" target="_blank">FontFaceObserver</a> очень проста: создается <code>span</code> элемент с заведомо известным font-family, измеряется его ширина, далее выставляется нужный font-family и снова измеряется ширина этого элемента. Если получаются разные значения, значит нужный шрифт срендерился, и значит он поддерживается.</p>
+
+<p><img src="http://bramstein.com/static/font-load-detection-one.af8fdf8f03.png" /></p>
+
+<p>В примере выше мы используем <code>span</code> элемент с текстом <code>BESbwy</code>, который рендерится с font-family <code>sans-serif</code>. Строка <code>BESbwy</code> используется потому, что в ней содержатся символы, имеющию разную ширину в большинстве шрифтов. Начальная ширина такого элемента с sans-serif шрфитом составляет 130px.</p>
+
+<p>Затем мы меняет font-family на нужный шрифт. Браузер находит новый шрифт и перерисовывает <code>span</code>. Полученный элемент теперь имеет ширину 126px. Различие в величинах означает, что нужный шрифт поддерживается.</p>
+
+<p>Хотя этот подход имеет проблему. Что если мы захотим в качестве проверяемого шрифта использовать тот же <code>sans-serif</code>? Понятно, что span будет иметь такую же ширину, т.е. он не поддерживается? Для решения этой проблемы FontFaceObserver использует 3 span-элемента, с тремя общими семействами шрифтов: <code>sans-serif</code>, <code>serif</code> и <code>monospace</code>.</p>
+
+<p><img src="http://bramstein.com/static/font-load-detection-three.94b2978d76.png" /></p>
+
+<p>В случае, когда мы попытаемся проверить поддержку font-family <code>serif</code>, ширина одного span-элемента будет такой же, но у других - отличаться. Т.о. мы можем предполагать, что проверяемый шрифт рендерится и поддерживается.</p>
+
+<h2>Как использовать?</h2>
+
+<p>Итак, насколько точен этот метод? Он хорошо работает на тех платформах, которые не врут по поводу установленных шрфитов. К сожалению, некоторые платформы врут. Например, Android поставляется только с тремя шрифтами: Droid Sans, Droid Serif и Droid Sans Mono&shy;space (или в более поздних версиях Android: Roboto и Noto). Его графическая подсистема отображает в качестве общих font-family локально установленные шрифты. Это означает, что с точки зрения браузера эти шрифты существует, даже если они на самом деле являются алиасами (псевдонимами) этих шрифтов. Хотя это разочаровывает, все же можно утверждать, что эти алиасы были выбраны в качестве преемлемой замены (будем надеяться, что это так).</p>
+
+<p><img alt="Fontfamily.io" src="http://bramstein.com/static/fontfamily.88b1a76ca3.png" /></p>
+
+<p>Алиасы шрифтов мало распространены на других платформах, но все же существуют. <a href="http://fontfamily.io" target="_blank">Fontfamily.io</a> от Zach Leather&shy;man - хороший инструмент для проверки, какие шрифты доступны на определенной платформе. Он также сообщит, является ли данный шрифт алиасом.&nbsp;</p>
+
+<p>Итак, действительно ли это надежный способ определить локально установленные шрифты? На самом деле это зависит от ваших целей. Я не рекомендовал бы использовать этот способ для отключения элементов в меню. Однако это может быть полезно, чтобы показать пользователю предупреждение, если &quot;web-безопасный&quot; шрифт не установлен локально. Наконец, если ваше web-приложение полагается на присутствие шрифта, лучше использовать web-шрифты вместо локальных. И можете быть уверены, что web-шрифты будут доступны независимо от платформы пользователя.</p>
+
+<h2>Отзывы</h2>
+
+<p>Remy Sharp предлагает подобную технику в статье &quot;<a href="https://remysharp.com/2008/07/08/how-to-detect-if-a-font-is-installed-only-using-javascript" target="_blank">Как обнаружить, установлен ли шрифт</a>&quot;. Его метод основан на использовании Comic Sans. К сожалению, этот способ ненадежен, т.к. многие платформы не имеют Comic Sans.</p>
+
+<p>Lalit Patel реализовал <a href="http://www.lalit.org/lab/javascript-css-font-detect/" target="_blank">аналогичное решение</a>, которое использует <code>monospace</code>. Хотя это и лучше, чем использование Comic Sans, все же способ может некорректно сработать для системных шрифтов и шрифтов, совместимых метрически.</p>
+
+<p>И наконец, Zach Leatherman использует ту же технику для обнаружения локально установленныx шрифтов на <a href="http://fontfamily.io" target="_blank">fontfamily.io</a>.</p>
+
+<style>
+    #fonts {
+        margin: 0;
+        background-color: #f2f2f2;
+        text-align: left;
+        column-count: 1;
+        -webkit-column-count: 1;
+        -moz-column-count: 1;
+        padding: 1.5em;
+        color: #444
+    }
+
+    @media(min-width: 600px) {
+        #fonts {
+            -webkit-column-count:3;
+            -moz-column-count: 3;
+            column-count: 3
+        }
+    }
+
+    #fonts li {
+        -webkit-column-break-inside: avoid;
+        break-inside: avoid;
+        display: block;
+        line-height: 2.5em;
+        margin: 0;
+        opacity: .4
+    }
+
+    #fonts li:before {
+        font-family: sans-serif;
+        width: 1.3em;
+        display: inline-block;
+        content: '✗';
+        text-align: center;
+        opacity: .7
+    }
+
+    #fonts li.available {
+        opacity: .9
+    }
+
+    #fonts li.available:before {
+        content: '✓'
+    }
+</style>
