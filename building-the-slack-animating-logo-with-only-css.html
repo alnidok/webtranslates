@@ -1,0 +1,355 @@
+<p>В этой статье мы разберем загрузочную анимацию Slack и воспроизведем ее с помощью CSS3 анимаций, трансформаций и режимов наложения.</p>
+<!--more-->
+
+<p><img alt="" src="http://callmenick.com/files/2015-06/slack-featured.png"></p>
+
+<p class="big-buttons">
+    <a class="big-button code" target="_blank" href="https://github.com/callmenick/Slack-CSS-Logo">Исходники</a>
+    <a class="big-button demo" target="_blank" href="http://callmenick.com/_development/slack-logo/">Демо</a>
+</p>
+
+<h2>Slack и логотип</h2>
+
+<p><a href="https://slack.com/" target="_blank">Slack</a> лично у меня вызывает интерес как крутая компания с отличным запоминающимся брендом. У них действительно приятное приложение, которое улучшает процесс общения внутри группы или команды. Я выбрал именно этот логотип для своего эксперимента, потому что на его примере мы сможем увидеть мощь CSS3 анимаций и трансформаций.</p>
+
+<p>Посмотрите на лого, оно состоит из 4 точек основных цветов. Эти точки вытягиваются в полоски, затем снова стагиваются и перемещаются в первоначальное положение. Также они накладываются друг на друга. Разработка логотипа и анимации шаг за шагом облегчается, если использовать простую математику и переменные Sass. В этой статье мы пробежимся по основам анимаций. В итоге вы должны будете получить некоторые знания, которые пригодятся вам в других проектах, связанных с CSS анимацией. Давайте приступим!</p>
+
+<h2>Разметка</h2>
+
+<p>Как я упомянул ранее, логотип состоит из 4 точек/полосок, каждая из которых имеет определенный цвет. Все они должны быть вложены в родительский контейнер и каждая точка должна иметь свой модификатор, который позволит нам выполнять позиционирование, устанавливать определенные цвета и задавать анимации. Вот разметка:</p>
+
+<pre>
+<code class="language-html">&lt;div class="c-slack"&gt;
+  &lt;span class="c-slack__dot c-slack__dot--a"&gt;&lt;/span&gt;
+  &lt;span class="c-slack__dot c-slack__dot--b"&gt;&lt;/span&gt;
+  &lt;span class="c-slack__dot c-slack__dot--c"&gt;&lt;/span&gt;
+  &lt;span class="c-slack__dot c-slack__dot--d"&gt;&lt;/span&gt;
+&lt;/div&gt;</code></pre>
+
+<p>Пока вы ничего не увидите в браузере, нужны стили.</p>
+
+<h2>Sass переменные и родительский класс</h2>
+
+<p>Я буду использовать Sass (SCSS) для обработки некоторых переменных и математических операций. Это сильно упрощает жизнь, особенно в подобных проектах, где позиционирование расчитывается математически. Давайте подумаем, какие переменные нам необходимы:</p>
+
+<ol>
+  <li>Мы определенно хотим задать размер для лого. Я выберу 96px в виде квадратной области.</li>
+  <li>Также я выберу диаметр для точек. 18px кажется самым подходящим относительно 96px.</li>
+  <li>Окончательное лого должно быть повернуто на определенный угол. Пусть это будет 15 градусов.</li>
+  <li>Нужно также установить длительность анимации. 2 сек кажется мне нормально.</li>
+  <li>И наконец, лого состоит из 4 разных цветов. Для простоты установим их в виде переменных.</li>
+</ol>
+
+<p>Получается следующий список переменных:</p>
+
+<pre>
+<code class="css">// variables
+
+$slack-size: 96px;
+$dot-diameter: 18px;
+$slack-angle: 15deg;
+$duration: 2s;
+
+$slack-blue: #6ecadc;
+$slack-yellow: #e9a820;
+$slack-pink: #e01563;
+$slack-green: #3eb991;</code></pre>
+
+<p>Стоит отметить, что окончательный анимированный логотип может идеально не совпадать с оригиналом по размеру. Акцент тут делается именно на процесс создания лого и его анимации.</p>
+
+<p>Теперь перейдем к стилям родительского контейнера. Все, что будет внутри него, должно абсолютно позиционироваться относительно родителя. Здесь я также использую определенную ранее переменную:</p>
+
+<pre>
+<code class="css">.c-slack {
+  position: relative;
+  z-index: 100;
+  margin: 80px auto;
+  width: $slack-size;
+  height: $slack-size;
+}</code></pre>
+
+<p>Мы все еще ничего не видим, хотя в процессе разработки я делал полупрозрачный фон, чтобы увидеть родительский контейнер. В любом случае, давайте перейдем к реальным точкам.</p>
+
+<h2>Позиционирование точек</h2>
+
+<p>Каждая точка абсолютно позиционирована внутри родительского контейнера и имеет <code>border-radius</code>, равный половине ее диаметра. Точки позиционируются с помощью свойств <code>top</code>, <code>right</code>, <code>bottom</code>, <code>left</code>. Естественно, они должны располагаться по улам: в верхнем правом, в нижнем правом, в нижнем левом и верхнем левом. В качестве фона используем цвета, определенные переменными.</p>
+
+<pre>
+<code class="css">.c-slack__dot {
+  display: block;
+  position: absolute;
+  width: $dot-diameter;
+  height: $dot-diameter;
+  border-radius: $dot-diameter/2;
+}
+
+.c-slack__dot--a {
+  top: 0; left: 0;
+  background-color: $slack-green;
+}
+
+.c-slack__dot--b {
+  top: 0; right: 0;
+  background-color: $slack-blue;
+}
+
+.c-slack__dot--c {
+  bottom: 0; right: 0;
+  background-color: $slack-yellow;
+}
+
+.c-slack__dot--d {
+  bottom: 0; left: 0;
+  background-color: $slack-pink;
+}</code></pre>
+
+<p>Теперь мы должны увидеть примерно это:</p>
+
+<p><img alt="" src="http://callmenick.com/files/2015-06/slack-logo-dots.png"></p>
+
+<p>Хорошее начало! Давайте перейдем к анимациям.</p>
+
+<h2>Анимации</h2>
+
+<p>Рассмотрим первую точку, точку <code>a</code>. Сначала мы хотим растянуть ее до высоты <code>$slack-size</code>, затем сжать, но уже к противоположному концу. И, наконец, точка должна переместиться к своему исходному положению, чтобы быть готовой к повторной анимации. Когда дело доходит до позиционирования точек, наш родительский контейнер упрощает жизнь благодаря комбинации absolute/relative. Вот анимация для точки <code>a</code>:</p>
+
+<pre>
+<code class="css">@keyframes slack-animation--a {
+  0% {
+    top: 0;
+    bottom: auto;
+    height: $dot-diameter;
+  }
+  33% {
+    top: 0;
+    bottom: auto;
+    height: $slack-size;
+  }
+  34% {
+    top: auto;
+    bottom: 0;
+    height: $slack-size;
+  }
+  66% {
+    top: auto;
+    bottom: 0;
+    height: $dot-diameter;
+  }
+  100% {
+    top: auto;
+    bottom: $slack-size - $dot-diameter;
+    height: $dot-diameter;
+  }
+}</code></pre>
+
+<p>Сейчас в браузере ничего не изменилось, потому что мы не указали анимации для точки. Пропишем для точки <code>a</code>:</p>
+
+<pre>
+<code class="css">.c-slack__dot--a {
+  /* other styles */
+  animation: slack-animation--a $duration infinite;
+}</code></pre>
+
+<p>Теперь наша последовательность выглядит так:</p>
+
+<p><img alt="" src="http://callmenick.com/files/2015-06/slack-logo-dot-a-sequence.png"></p>
+
+<p>Давайте проделаем то же самое для остальных трех точек. Точка <code>b</code> стартует из верхнего правого угла, растягивается налево, влево же стягивается и обратно перемещается вправо. Анимация для этой точки:</p>
+
+<pre>
+<code class="css">@keyframes slack-animation--b {
+  0% {
+    right: 0;
+    left: auto;
+    width: $dot-diameter;
+  }
+  33% {
+    right: 0;
+    left: auto;
+    width: $slack-size;
+  }
+  34% {
+    right: auto;
+    left: 0;
+    width: $slack-size;
+  }
+  66% {
+    right: auto;
+    left: 0;
+    width: $dot-diameter;
+  }
+  100% {
+    right: auto;
+    left: $slack-size - $dot-diameter;
+    width: $dot-diameter;
+  }
+}</code></pre>
+
+<p>Не забываем включить анимацию для точки <code>b</code>:</p>
+
+<pre>
+<code class="css">.c-slack__dot--b {
+  /* other styles */
+  animation: slack-animation--b $duration infinite;
+}</code></pre>
+
+<p>Точка <code>c</code> стартует из нижнего правого угла, растягивается и сжимается наверх, и затем снова перемещается вниз:</p>
+
+<pre>
+<code class="css">@keyframes slack-animation--c {
+  0% {
+    bottom: 0;
+    top: auto;
+    height: $dot-diameter;
+  }
+  33% {
+    bottom: 0;
+    top: auto;
+    height: $slack-size;
+  }
+  34% {
+    bottom: auto;
+    top: -($slack-size - $slack-size);
+    height: $slack-size;
+  }
+  66% {
+    bottom: auto;
+    top: -($slack-size - $slack-size);
+    height: $dot-diameter;
+  }
+  100% {
+    bottom: auto;
+    top: $slack-size - $dot-diameter;
+    height: $dot-diameter;
+  }
+}</code></pre>
+
+<p>Указываем анимацию для точки <code>c</code>:</p>
+
+<pre>
+<code class="css">.c-slack__dot--c {
+  /* other styles */
+  animation: slack-animation--c $duration infinite;
+}</code></pre>
+
+<p>И, наконец, точка <code>d</code>. Стартует из нижнего левого угла, растягивается и сжимается направо, и перемещается влево:</p>
+
+<pre>
+<code class="css">@keyframes slack-animation--d {
+  0% {
+    left: 0;
+    right: auto;
+    width: $dot-diameter;
+  }
+  33% {
+    left: 0;
+    right: auto;
+    width: $slack-size;
+  }
+  34% {
+    left: auto;
+    right: -($slack-size - $slack-size);
+    width: $slack-size;
+  }
+  66% {
+    left: auto;
+    right: -($slack-size - $slack-size);
+    width: $dot-diameter;
+  }
+  100% {
+    left: auto;
+    right: $slack-size - $dot-diameter;
+    width: $dot-diameter;
+  }
+}</code></pre>
+
+<p>И еще разок указываем анимацию для точки:</p>
+
+<pre>
+<code class="css">.c-slack__dot--d {
+  /* other styles */
+  animation: slack-animation--d $duration infinite;
+}</code></pre>
+
+<p>Теперь в браузере мы должны увидеть следующую последовательность:</p>
+
+<p><img alt="" src="http://callmenick.com/files/2015-06/slack-logo-full-sequence-1.png"></p>
+
+<p>Отлично, мы дошли до сюда! Продолжаем.</p>
+
+<h2>Наложение</h2>
+
+<p>В оригинальной анимации логотипа точки (полоски) накладываются друг на друга. Мы можем добиться этого, сдвинув каждую точку немного вовнутрь с помощью translations. Используем в качестве основы для translation диаметр точки:</p>
+
+<pre>
+<code class="css">.c-slack__dot--a {
+  /* other styles */
+  transform: translateX($dot-diameter);
+}
+
+.c-slack__dot--b {
+  /* other styles */
+  transform: translateY($dot-diameter);
+}
+
+.c-slack__dot--c {
+  /* other styles */
+  transform: translateX(-$dot-diameter);
+}
+
+.c-slack__dot--d {
+  /* other styles */
+  transform: translateY(-$dot-diameter);
+}</code></pre>
+
+<p>Теперь получается такая последовательность:</p>
+
+<p><img alt="" src="http://callmenick.com/files/2015-06/slack-logo-full-sequence-2.png"></p>
+
+<p>Намного лучше! Продолжаем.</p>
+
+
+<h2>Поворот</h2>
+
+<p>Анимация Slack логотипа выглядит отлично, но в оригинале все происходит под наклонным углом. Благодаря родительскому классу, добиться этого очень легко, просто добавляем к нему поворот:</p>
+
+<pre>
+<code>.c-slack {
+  /* other styles */
+  transform: rotate(-$slack-angle);
+}</code></pre>
+
+<p>Полная последовательность должна получиться такой:</p>
+
+<p><img alt="" src="http://callmenick.com/files/2015-06/slack-logo-full-sequence-3.png"></p>
+
+<p>Отлично! Вот только мы кое-что упустили.</p>
+
+
+<h2>Смешиваем цвета</h2>
+
+<p>Существует последний штрих, чтобы все вместе соединилось. Это не связано с анимацией, однако связано с новыми режимами наложения в CSS (CSS blending). Давайте добавим режим &quot;умножение&quot; на всех точках, чтобы получить приятное наложение цветов. К тому же это делает анимацию более жизненной, как в оригинале. </p>
+
+<pre>
+<code class="css">.c-slack__dot {
+  /* other styles */
+  mix-blend-mode: multiply;
+}</code></pre>
+
+<p>И окончательная последовательность:</p>
+
+<p><img alt="" src="http://callmenick.com/files/2015-06/slack-logo-full-sequence-final.png"></p>
+
+<p>Превосходно! Воззрите магию современного CSS!</p>
+
+
+<h2>Примечание</h2>
+
+<p>Подходя к любой анимации пошагово, применяя простую математику и современные CSS свойства, можно открыть для себя огромный мир возможностей. Режимы наложения в CSS также являются полезной штукой, поэтому разберитесь и с ними тоже.</p>
+
+<p>Для краткости в статье я использовал CSS без браузерных префиксов. Убедитесь, что вы указываете все необходимые префиксы. Для этих целей я рекомендую использовать <code>PostCSS</code> утилиту <code>auto-prefixer</code>.</p>
+
+
+<h2>Заключение</h2>
+
+<p>На этом все! Надеюсь, эта статья вам понравилась и научила чему-то новому. На забывайте, вы можете посмотреть демо и скачать исходники. Если есть вопросы, комментарии, отзывы - пишите, не стесняйтесь.</p>
